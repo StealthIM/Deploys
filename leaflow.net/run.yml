@@ -1,3 +1,5 @@
+# 这是一个平台可部署的资源的示例，你可以参考这个文档来编写自己的清单文件
+
 kind: ConfigMap
 name: config
 data:
@@ -251,11 +253,6 @@ containers:
     resources:
       memory: 1024
       cpu: 1000
-    volume_mounts:
-      - mount_path: /var/lib/mysql
-        storage_name: mysql-data
-        sub_path: ""
-        read_only: false
 
 ---
 kind: Service
