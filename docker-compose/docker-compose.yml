@@ -1,0 +1,338 @@
+services:
+  stim-mysql:
+    image: mysql:8.4.2
+    expose:
+      - "3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "<PASSWORD>"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - stim-net
+  stim-nats:
+    image: nats:latest
+    expose:
+      - "4222"
+    environment:
+      NATS_AUTH: "root:<PASSWORD>"
+    networks:
+      - stim-net
+  stim-redis:
+    image: redis:latest
+    expose:
+      - "6379"
+    environment:
+      REDIS_PASSWORD: "<PASSWORD>"
+    volumes:
+      - redis-data:/data
+    networks:
+      - stim-net
+  stim-filestorage:
+    image: ghcr.io/stealthim/stealthimfilestorage/stealthimfilestorage-app:v0.0.1
+    expose:
+      - "50052"
+    volumes:
+      - filestorage-data:/app/storage
+    networks:
+      - stim-net
+    restart: always
+    command:
+      - "sh"
+      - "-c"
+      - |
+        cat << 'EOF' > /app/config.toml
+        [server]
+        host = "0.0.0.0"
+        port = 50052
+        log = false
+
+        [file]
+        path = "./storage"
+
+        [usage]
+        total = 32768 # 以 block 计量
+        # block size 由上层 API 决定
+        EOF
+
+        python -m stealthimfilestorage --config /app/config.toml
+  stim-dbgateway:
+    image: ghcr.io/stealthim/stealthimdb/stealthimdb-app:v0.0.1
+    expose:
+      - "50051"
+    configs:
+      - source: dbgateway
+        target: /app/config.toml
+    networks:
+      - stim-net
+    restart: always
+    command:
+      - "sh"
+      - "-c"
+      - |
+        cat << 'EOF' > /app/config.toml
+        [mysql]
+        host = "stim-mysql"
+        port = 3306
+        maxconn = 10
+        minconn = 5
+        user = "root"
+        password = "<PASSWORD>"
+
+        [redis]
+        host = "stim-redis"
+        port = 6379
+        dbname = 0
+        password = "<PASSWORD>"
+        cachetime = 3600
+
+        [grpc]
+        host = "0.0.0.0"
+        port = 50051
+        log = false
+        EOF
+
+
+        while true; do ./StealthIMDB --config /app/config.toml; sleep 10; done
+  stim-fileapi:
+    image: ghcr.io/stealthim/stealthimfileapi/stealthimfileapi-app:v0.0.1
+    expose:
+      - "50053"
+    networks:
+      - stim-net
+    restart: always
+    command:
+      - "sh"
+      - "-c"
+      - |
+        cat << 'EOF' > /app/config.toml
+        [server]
+        host = "0.0.0.0"
+        port = 50053
+        log = false
+
+        [dbgateway]
+        host = "stim-dbgateway"
+        port = 50051
+        conn_num = 5
+        sql_timeout = 5000      # 单位：ms
+
+        [[filestorage]]
+        host = "stim-filestorage"
+        port = 50052
+        id = 0
+
+        [storage]
+        timeout = 1000   # 单位：ms
+        check_time = 60  # 单位：s
+        blocksize = 2048 # 单位：KB
+        # 不建议更改，不超过 2048
+
+        [callback] # 回调配置
+        host = "stim-msap"
+        port = 50056
+        conn_num = 5
+        EOF
+
+        ./StealthIMFileAPI --config /app/config.toml
+  stim-session:
+    image: ghcr.io/stealthim/stealthimsession/stealthimsession-app:v0.0.1
+    expose:
+      - "50054"
+    command:
+      - "sh"
+      - "-c"
+      - |
+        cat << 'EOF' > /app/config.toml
+        [grpc]
+        host = "0.0.0.0" # GRPC地址
+        port = 50054     # GRPC监听端口
+        log = false      # 启用日志，调试功能，上线建议关闭
+
+        [dbgateway]
+        host = "stim-dbgateway"
+        port = 50051
+        conn_num = 5
+        sql_timeout = 5000      # 单位：ms
+
+        [cache]
+        mem_timeout = 60    # 单位 s
+        mem_maxsize = 100   # 单位 KB
+        mem_cleantime = 360 # 单位 s
+
+        [session]
+        expire_hours = 48    # 会话有效期（小时）
+        clean_interval = 180 # 清理间隔（分钟）
+        EOF
+
+        ./StealthIMSession --config /app/config.toml
+    networks:
+      - stim-net
+    restart: always
+  stim-user:
+    image: ghcr.io/stealthim/stealthimuser/stealthimuser-app:v0.0.1
+    expose:
+      - "50055"
+    command:
+      - "sh"
+      - "-c"
+      - |
+        cat << 'EOF' > /app/config.toml
+        [grpc]
+        host = "0.0.0.0" # GRPC地址
+        port = 50055     # GRPC监听端口
+        log = false      # 启用日志，调试功能，上线建议关闭
+
+        [dbgateway]
+        host = "stim-dbgateway"
+        port = 50051
+        conn_num = 5
+        sql_timeout = 5000      # 单位：ms
+
+        [session]
+        host = "stim-session"
+        port = 50054
+        conn_num = 5
+        EOF
+        ./StealthIMUser --config /app/config.toml
+    networks:
+      - stim-net
+    restart: always
+  stim-msap:
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.1
+    expose:
+      - "50056"
+      - "50057"
+    command:
+      - "sh"
+      - "-c"
+      - |
+        cat << 'EOF' > /app/config.toml
+        [send]
+        host = "0.0.0.0" # GRPC地址
+        port = 50056     # GRPC监听端口
+        log = false      # 启用日志，调试功能，上线建议关闭
+
+        [sync]
+        host = "0.0.0.0" # GRPC地址
+        port = 50057     # GRPC监听端口
+        log = false      # 启用日志，调试功能，上线建议关闭
+
+        [dbgateway]
+        host = "stim-dbgateway"
+        port = 50051
+        conn_num = 5
+        sql_timeout = 5000      # 单位：ms
+
+        [nats]
+        host = "stim-nats"
+        port = 4222
+        username = "root"
+        password = "<PASSWORD>"
+        conn_num = 5
+
+        [database]
+        check_split_interval = 900 # 检查分表间隔，单位 s
+        max_msg_size = 4           # 最大消息大小，单位 KiB
+        partition_size = 12000000  # 分表条数
+        EOF
+
+        ./StealthIMMSAP --config /app/config.toml
+    networks:
+      - stim-net
+    restart: always
+  stim-groupuser:
+    image: ghcr.io/stealthim/stealthimgroupuser/stealthimgroupuser-app:v0.0.1
+    expose:
+      - "50058"
+    command:
+      - "sh"
+      - "-c"
+      - |
+        cat << 'EOF' > /app/config.toml
+        [grpc]
+        host = "0.0.0.0" # GRPC地址
+        port = 50058     # GRPC监听端口
+        log = false      # 启用日志，调试功能，上线建议关闭
+
+        [dbgateway]
+        host = "stim-dbgateway"
+        port = 50051
+        conn_num = 5
+        sql_timeout = 5000      # 单位：ms
+
+        [user]
+        host = "stim-user"
+        port = 50055
+        conn_num = 5
+        sql_timeout = 5000 # 单位：ms
+
+        [security]
+        password_salt = "<RANDOMSALT>"
+        EOF
+
+        ./StealthIMGroupUser --config /app/config.toml
+    networks:
+      - stim-net
+    restart: always
+  stim-proxy:
+    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:v0.0.1
+    ports:
+      - "8089:80"
+    command:
+      - "sh"
+      - "-c"
+      - |
+        cat << 'EOF' > /app/config.toml
+        [proxy]
+        host = "0.0.0.0" # 地址
+        port = 80        # 监听端口
+        log = false      # 启用日志，调试功能，上线建议关闭
+
+        [fileapi] # FileAPI
+        host = "stim-fileapi"
+        port = 50053
+        conn_num = 5
+
+        [session] # Session
+        host = "stim-session"
+        port = 50054
+        conn_num = 5
+
+        [user] # User
+        host = "stim-user"
+        port = 50055
+        conn_num = 5
+
+        [msap_read] # MSAP 读（sync）端口
+        host = "stim-msap"
+        port = 50057
+        conn_num = 5
+
+        [msap_write] # MSAP 写（send）端口
+        host = "stim-msap"
+        port = 50056
+        conn_num = 5
+
+        [group] # GroupUser
+        host = "stim-groupuser"
+        port = 50058
+        conn_num = 5
+        EOF
+
+        ./StealthIMProxy --config /app/config.toml
+    environment:
+      GIN_MODE: "release"
+    networks:
+      - stim-net
+    restart: always
+
+volumes:
+  mysql-data:
+  redis-data:
+  filestorage-data:
+
+networks:
+  stim-net:
+    driver: bridge
+  default:
+    driver: bridge
