@@ -68,7 +68,7 @@
 ```bash
 mkdir stealthim -p
 wget https://raw.githubusercontent.com/StealthIM/Deploys/refs/heads/main/docker-compose/docker-compose.yml -O stealthim/docker-compose.yml
-docker-compose up
+cd stealthim && docker-compose up -d
 ```
 
 ### 云服务
