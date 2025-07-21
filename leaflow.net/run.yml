@@ -273,6 +273,11 @@ service_name: nats-headless
 containers:
   - name: nats
     image: nats:latest
+    args:
+      - "-js"
+      - "-DV"
+      - "-m"
+      - "8222"
     ports:
       - name: nats
         container_port: 4222
