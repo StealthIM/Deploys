@@ -204,10 +204,13 @@ data:
                     add_header 'Content-Length' 0;
                     return 204; # 返回 204 No Content
                 }
+                proxy_set_header Cache-Control "no-cache";
+                proxy_set_header Connection "";
+                
+                # 禁用缓冲，实现实时流传输
+                proxy_buffering off;
+                proxy_cache off;
 
-                # 将实际请求代理到你的后端服务
-                # 请将 backend_service_host 和 backend_service_port 替换为你的后端服务的实际地址和端口
-                # 如果后端服务也是一个Docker容器，可以使用其服务名作为 host
                 proxy_pass http://proxy:80;
                 proxy_set_header Host $host;
                 proxy_set_header X-Real-IP $remote_addr;
@@ -540,7 +543,7 @@ name: proxy
 replicas: 1
 containers:
   - name: proxy
-    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:v0.0.1
+    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:latest
     ports:
       - name: http
         container_port: 80
