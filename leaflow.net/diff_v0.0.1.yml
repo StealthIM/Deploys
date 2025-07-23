@@ -1,0 +1,568 @@
+kind: ConfigMap
+name: config
+data:
+  dbgateway: |-
+    [mysql]
+    host = "mysql-headless-v.${namespace}.svc.cluster.local"
+    port = 3306
+    maxconn = 10
+    minconn = 5
+    user = "root"
+    password = "<PASSWORD>"
+
+    [redis]
+    host = "redis-headless-v.${namespace}.svc.cluster.local"
+    port = 6379
+    dbname = 0
+    password = "<PASSWORD>"
+    cachetime = 3600
+
+    [grpc]
+    host = "0.0.0.0"
+    port = 50051
+    log = false
+  filestorage: |-
+    [server]
+    host = "0.0.0.0"
+    port = 50052
+    log = false
+
+    [file]
+    path = "./storage"
+
+    [usage]
+    total = 32768 # 以 block 计量
+    # block size 由上层 API 决定
+  fileapi: |-
+    [server]
+    host = "0.0.0.0"
+    port = 50053
+    log = false
+
+    [dbgateway]
+    host = "dbgateway.${namespace}.svc.cluster.local"
+    port = 50051
+    conn_num = 5
+    sql_timeout = 5000 # 单位：ms
+
+    [[filestorage]]
+    host = "filestorage.${namespace}.svc.cluster.local"
+    port = 50052
+    id = 0
+
+    [storage]
+    timeout = 1000   # 单位：ms
+    check_time = 60  # 单位：s
+    blocksize = 2048 # 单位：KB
+    # 不建议更改，不超过 2048
+
+    [callback] # 回调配置
+    host = "msap-w.${namespace}.svc.cluster.local"
+    port = 50056
+    conn_num = 5
+  session: |-
+    [grpc]
+    host = "0.0.0.0" # GRPC地址
+    port = 50054       # GRPC监听端口
+    log = false        # 启用日志，调试功能，上线建议关闭
+
+    [dbgateway]
+    host = "dbgateway.${namespace}.svc.cluster.local"
+    port = 50051
+    conn_num = 5
+    sql_timeout = 5000 # 单位：ms
+
+    [cache]
+    mem_timeout = 60    # 单位 s
+    mem_maxsize = 100   # 单位 KB
+    mem_cleantime = 360 # 单位 s
+
+    [session]
+    expire_hours = 48    # 会话有效期（小时）
+    clean_interval = 180 # 清理间隔（分钟）
+  user: |-
+    [grpc]
+    host = "0.0.0.0" # GRPC地址
+    port = 50055       # GRPC监听端口
+    log = false        # 启用日志，调试功能，上线建议关闭
+
+    [dbgateway]
+    host = "dbgateway.${namespace}.svc.cluster.local"
+    port = 50051
+    conn_num = 5
+    sql_timeout = 5000 # 单位：ms
+
+    [session]
+    host = "session.${namespace}.svc.cluster.local"
+    port = 50054
+    conn_num = 5
+  msap: |-
+    [send]
+    host = "0.0.0.0" # GRPC地址
+    port = 50056       # GRPC监听端口
+    log = false        # 启用日志，调试功能，上线建议关闭
+
+    [sync]
+    host = "0.0.0.0" # GRPC地址
+    port = 50057       # GRPC监听端口
+    log = false        # 启用日志，调试功能，上线建议关闭
+
+    [dbgateway]
+    host = "dbgateway.${namespace}.svc.cluster.local"
+    port = 50051
+    conn_num = 5
+    sql_timeout = 5000 # 单位：ms
+
+    [nats]
+    host = "nats.${namespace}.svc.cluster.local"
+    port = 4222
+    username = "root"
+    password = "<PASSWORD>"
+    conn_num = 5
+
+    [database]
+    check_split_interval = 900 # 检查分表间隔，单位 s
+    max_msg_size = 4           # 最大消息大小，单位 KiB
+    partition_size = 12000000  # 分表条数
+  groupuser: |-
+    [grpc]
+    host = "0.0.0.0" # GRPC地址
+    port = 50058       # GRPC监听端口
+    log = false        # 启用日志，调试功能，上线建议关闭
+
+    [dbgateway]
+    host = "dbgateway.${namespace}.svc.cluster.local"
+    port = 50051
+    conn_num = 5
+    sql_timeout = 5000 # 单位：ms
+
+    [user]
+    host = "user.${namespace}.svc.cluster.local"
+    port = 50055
+    conn_num = 5
+    sql_timeout = 5000 # 单位：ms
+
+    [security]
+    password_salt = "<RANDOMSALT>"
+  proxy: |-
+    [proxy]
+    host = "0.0.0.0" # 地址
+    port = 80          # 监听端口
+    log = false        # 启用日志，调试功能，上线建议关闭
+
+    [fileapi] # FileAPI
+    host = "fileapi.${namespace}.svc.cluster.local"
+    port = 50053
+    conn_num = 5
+
+    [session] # Session
+    host = "session.${namespace}.svc.cluster.local"
+    port = 50054
+    conn_num = 5
+
+    [user] # User
+    host = "user.${namespace}.svc.cluster.local"
+    port = 50055
+    conn_num = 5
+
+    [msap_read] # MSAP 读（sync）端口
+    host = "msap-r.${namespace}.svc.cluster.local"
+    port = 50057
+    conn_num = 5
+
+    [msap_write] # MSAP 写（send）端口
+    host = "msap-w.${namespace}.svc.cluster.local"
+    port = 50056
+    conn_num = 5
+
+    [group] # GroupUser
+    host = "groupuser.${namespace}.svc.cluster.local"
+    port = 50058
+    conn_num = 5
+  nginx: |-
+    # nginx.conf
+    events {
+        worker_connections 1024;
+    }
+
+    http {
+        sendfile        on;
+        keepalive_timeout  65;
+
+        server {
+            listen 80; # Nginx 监听的端口
+            server_name 0.0.0.0; # 可以是你的域名或IP，在Docker内部通常用localhost
+
+            location / {
+                # 处理 OPTIONS 预检请求
+                if ($request_method = 'OPTIONS') {
+                    add_header 'Access-Control-Allow-Origin' '*';
+                    add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, OPTIONS';
+                    add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization';
+                    add_header 'Access-Control-Max-Age' 1728000;
+                    add_header 'Content-Type' 'text/plain; charset=utf-8';
+                    add_header 'Content-Length' 0;
+                    return 204; # 返回 204 No Content
+                }
+                proxy_set_header Cache-Control "no-cache";
+                proxy_set_header Connection "";
+                
+                # 禁用缓冲，实现实时流传输
+                proxy_buffering off;
+                proxy_cache off;
+
+                proxy_pass http://proxy:80;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
+
+                # 为实际响应添加 CORS 头
+                add_header 'Access-Control-Allow-Origin' '*'; # 生产环境请替换为你的前端域名
+                add_header 'Access-Control-Allow-Methods' '*';
+                add_header 'Access-Control-Allow-Headers' '*';
+                add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
+
+                proxy_read_timeout 86400s;
+                proxy_send_timeout 86400s;
+            }
+        }
+    }
+
+---
+kind: StatefulSet
+name: mysql
+replicas: 1
+service_name: mysql-headless
+containers:
+  - name: mysql
+    image: mysql:8.4.2
+    ports:
+      - name: mysql
+        container_port: 3306
+        protocol: TCP
+    env:
+      - name: MYSQL_ROOT_PASSWORD
+        value: <PASSWORD>
+    resources:
+      memory: 1024
+      cpu: 1000
+    volume_mounts:
+      - mount_path: /var/lib/mysql
+        storage_name: mysql-data
+        sub_path: ""
+        read_only: false
+
+---
+kind: StatefulSet
+name: nats
+replicas: 1
+service_name: nats-headless
+containers:
+  - name: nats
+    image: nats:latest
+    args:
+      - "-js"
+      - "-DV"
+      - "-m"
+      - "8222"
+    ports:
+      - name: nats
+        container_port: 4222
+        protocol: TCP
+    env:
+      - name: NATS_AUTH
+        value: root:<PASSWORD>
+    resources:
+      memory: 1024
+      cpu: 1000
+
+---
+kind: StatefulSet
+name: redis
+replicas: 1
+service_name: redis-headless
+containers:
+  - name: redis
+    image: redis:latest
+    ports:
+      - name: mysql
+        container_port: 6379
+        protocol: TCP
+    env:
+      - name: REDIS_PASSWORD
+        value: <PASSWORD>
+    resources:
+      memory: 2048
+      cpu: 1000
+    volume_mounts:
+      - mount_path: /data
+        storage_name: redis-data
+        sub_path: ""
+        read_only: false
+
+---
+kind: StatefulSet
+name: filestorage
+replicas: 1
+service_name: filestorage-headless
+containers:
+  - name: filestorage
+    image: ghcr.io/stealthim/stealthimfilestorage/stealthimfilestorage-app:v0.0.1
+    ports:
+      - name: http
+        container_port: 50052
+        protocol: TCP
+    configmap_mounts:
+      - configmap_name: config
+        items:
+          - key: filestorage
+            path: config.toml
+        mount_path: /app/config
+    volume_mounts:
+      - mount_path: /app/storage
+        storage_name: filestorage-data
+        sub_path: ""
+        read_only: false
+    resources:
+      memory: 1024
+      cpu: 1000
+
+---
+kind: Deployment
+name: dbgateway
+replicas: 1
+service_name: dbgateway
+containers:
+  - name: dbgateway
+    image: ghcr.io/stealthim/stealthimdb/stealthimdb-app:v0.0.1
+    ports:
+      - name: http
+        container_port: 50051
+        protocol: TCP
+    configmap_mounts:
+      - configmap_name: config
+        items:
+          - key: dbgateway
+            path: config.toml
+        mount_path: /app/config
+    resources:
+      memory: 1024
+      cpu: 1000
+
+---
+kind: Deployment
+name: fileapi
+replicas: 1
+containers:
+  - name: fileapi
+    image: ghcr.io/stealthim/stealthimfileapi/stealthimfileapi-app:v0.0.1
+    ports:
+      - name: http
+        container_port: 50053
+        protocol: TCP
+    configmap_mounts:
+      - configmap_name: config
+        items:
+          - key: fileapi
+            path: config.toml
+        mount_path: /app/config
+    resources:
+      memory: 1024
+      cpu: 1000
+
+---
+kind: Deployment
+name: session
+replicas: 1
+containers:
+  - name: session
+    image: ghcr.io/stealthim/stealthimsession/stealthimsession-app:v0.0.1
+    ports:
+      - name: http
+        container_port: 50054
+        protocol: TCP
+    configmap_mounts:
+      - configmap_name: config
+        items:
+          - key: session
+            path: config.toml
+        mount_path: /app/config
+    resources:
+      memory: 1024
+      cpu: 1000
+
+---
+kind: Deployment
+name: user
+replicas: 1
+containers:
+  - name: user
+    image: ghcr.io/stealthim/stealthimuser/stealthimuser-app:v0.0.1
+    ports:
+      - name: http
+        container_port: 50055
+        protocol: TCP
+    configmap_mounts:
+      - configmap_name: config
+        items:
+          - key: user
+            path: config.toml
+        mount_path: /app/config
+    resources:
+      memory: 1024
+      cpu: 1000
+
+---
+kind: Deployment
+name: msap-w
+replicas: 1
+containers:
+  - name: msap
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.1
+    ports:
+      - name: http
+        container_port: 50056
+        protocol: TCP
+    configmap_mounts:
+      - configmap_name: config
+        items:
+          - key: msap
+            path: config.toml
+        mount_path: /app/config
+    env:
+      - name: StealthIMMSAP_MODE
+        value: grpc
+    resources:
+      memory: 1024
+      cpu: 1000
+
+---
+kind: Deployment
+name: msap-r
+replicas: 1
+containers:
+  - name: msap
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.1
+    ports:
+      - name: http
+        container_port: 50057
+        protocol: TCP
+    configmap_mounts:
+      - configmap_name: config
+        items:
+          - key: msap
+            path: config.toml
+        mount_path: /app/config
+    env:
+      - name: StealthIMMSAP_MODE
+        value: sender
+    resources:
+      memory: 1024
+      cpu: 500
+
+---
+kind: Deployment
+name: msap-spliter
+replicas: 1
+containers:
+  - name: msap
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.1
+    configmap_mounts:
+      - configmap_name: config
+        items:
+          - key: msap
+            path: config.toml
+        mount_path: /app/config
+    env:
+      - name: StealthIMMSAP_MODE
+        value: spliter
+    resources:
+      memory: 1024
+      cpu: 500
+
+---
+kind: Deployment
+name: msap-subscriber
+replicas: 1
+containers:
+  - name: msap
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.1
+    configmap_mounts:
+      - configmap_name: config
+        items:
+          - key: msap
+            path: config.toml
+        mount_path: /app/config
+    env:
+      - name: StealthIMMSAP_MODE
+        value: subscriber
+    resources:
+      memory: 1024
+      cpu: 500
+
+---
+kind: Deployment
+name: groupuser
+replicas: 1
+containers:
+  - name: groupuser
+    image: ghcr.io/stealthim/stealthimgroupuser/stealthimgroupuser-app:v0.0.1
+    ports:
+      - name: http
+        container_port: 50058
+        protocol: TCP
+    configmap_mounts:
+      - configmap_name: config
+        items:
+          - key: groupuser
+            path: config.toml
+        mount_path: /app/config
+    resources:
+      memory: 1024
+      cpu: 1000
+
+---
+kind: Deployment
+name: proxy
+replicas: 1
+containers:
+  - name: proxy
+    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:v0.0.3
+    ports:
+      - name: http
+        container_port: 80
+        protocol: TCP
+    configmap_mounts:
+      - configmap_name: config
+        items:
+          - key: proxy
+            path: config.toml
+        mount_path: /app/config
+    env:
+      - name: GIN_MODE
+        value: release
+    resources:
+      memory: 1024
+      cpu: 1000
+
+---
+kind: Deployment
+name: nginx
+replicas: 1
+containers:
+  - name: nginx
+    image: nginx:latest
+    ports:
+      - name: http
+        container_port: 80
+        protocol: TCP
+    configmap_mounts:
+      - configmap_name: config
+        items:
+          - key: nginx
+            path: nginx.conf
+        mount_path: /etc/nginx
+    resources:
+      memory: 1024
+      cpu: 1000
