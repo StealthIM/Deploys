@@ -543,7 +543,7 @@ name: proxy
 replicas: 1
 containers:
   - name: proxy
-    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:latest
+    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:v0.0.3
     ports:
       - name: http
         container_port: 80

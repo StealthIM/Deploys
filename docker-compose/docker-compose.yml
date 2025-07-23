@@ -275,7 +275,7 @@ services:
       - stim-net
     restart: always
   stim-proxy:
-    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:v0.0.1
+    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:v0.0.3
     ports:
       - "8089:80"
     command:
