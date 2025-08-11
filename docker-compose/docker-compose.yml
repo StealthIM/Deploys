@@ -56,7 +56,7 @@ services:
 
         python -m stealthimfilestorage --config /app/config.toml
   stim-dbgateway:
-    image: ghcr.io/stealthim/stealthimdb/stealthimdb-app:v0.0.1
+    image: ghcr.io/stealthim/stealthimdb/stealthimdb-app:v0.0.2
     expose:
       - "50051"
     configs:
@@ -198,7 +198,7 @@ services:
       - stim-net
     restart: always
   stim-msap:
-    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.1
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.2
     expose:
       - "50056"
       - "50057"
@@ -222,6 +222,11 @@ services:
         port = 50051
         conn_num = 5
         sql_timeout = 5000      # 单位：ms
+        
+        [user]
+        host = "stim-user"
+        port = 50055
+        conn_num = 5
 
         [nats]
         host = "stim-nats"
@@ -275,7 +280,7 @@ services:
       - stim-net
     restart: always
   stim-proxy:
-    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:v0.0.3
+    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:v0.0.4
     ports:
       - "8089:80"
     command:
