@@ -111,7 +111,12 @@ data:
     host = "dbgateway.${namespace}.svc.cluster.local"
     port = 50051
     conn_num = 5
-    sql_timeout = 5000 # 单位：ms
+    sql_timeout = 5000
+    
+    [user]
+    host = "user.${namespace}.svc.cluster.local"
+    port = 50055
+    conn_num = 5
 
     [nats]
     host = "nats.${namespace}.svc.cluster.local"
@@ -363,7 +368,7 @@ replicas: 1
 service_name: dbgateway
 containers:
   - name: dbgateway
-    image: ghcr.io/stealthim/stealthimdb/stealthimdb-app:v0.0.1
+    image: ghcr.io/stealthim/stealthimdb/stealthimdb-app:v0.0.2
     ports:
       - name: http
         container_port: 50051
@@ -447,7 +452,7 @@ name: msap-w
 replicas: 1
 containers:
   - name: msap
-    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.1
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.2
     ports:
       - name: http
         container_port: 50056
@@ -471,7 +476,7 @@ name: msap-r
 replicas: 1
 containers:
   - name: msap
-    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.1
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.2
     ports:
       - name: http
         container_port: 50057
@@ -495,7 +500,7 @@ name: msap-spliter
 replicas: 1
 containers:
   - name: msap
-    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.1
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.2
     configmap_mounts:
       - configmap_name: config
         items:
@@ -515,7 +520,7 @@ name: msap-subscriber
 replicas: 1
 containers:
   - name: msap
-    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.1
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.2
     configmap_mounts:
       - configmap_name: config
         items:
@@ -556,7 +561,7 @@ name: proxy
 replicas: 1
 containers:
   - name: proxy
-    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:v0.0.3
+    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:v0.0.4
     ports:
       - name: http
         container_port: 80
