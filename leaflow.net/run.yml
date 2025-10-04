@@ -368,7 +368,7 @@ replicas: 1
 service_name: dbgateway
 containers:
   - name: dbgateway
-    image: ghcr.io/stealthim/stealthimdb/stealthimdb-app:v0.0.2
+    image: ghcr.io/stealthim/stealthimdb/stealthimdb-app:v0.0.5
     ports:
       - name: http
         container_port: 50051
@@ -389,7 +389,7 @@ name: fileapi
 replicas: 1
 containers:
   - name: fileapi
-    image: ghcr.io/stealthim/stealthimfileapi/stealthimfileapi-app:v0.0.1
+    image: ghcr.io/stealthim/stealthimfileapi/stealthimfileapi-app:v0.0.2
     ports:
       - name: http
         container_port: 50053
@@ -431,7 +431,7 @@ name: user
 replicas: 1
 containers:
   - name: user
-    image: ghcr.io/stealthim/stealthimuser/stealthimuser-app:v0.0.1
+    image: ghcr.io/stealthim/stealthimuser/stealthimuser-app:v0.0.3
     ports:
       - name: http
         container_port: 50055
@@ -452,7 +452,7 @@ name: msap-w
 replicas: 1
 containers:
   - name: msap
-    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.2
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.7
     ports:
       - name: http
         container_port: 50056
@@ -476,7 +476,7 @@ name: msap-r
 replicas: 1
 containers:
   - name: msap
-    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.2
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.7
     ports:
       - name: http
         container_port: 50057
@@ -500,7 +500,7 @@ name: msap-spliter
 replicas: 1
 containers:
   - name: msap
-    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.2
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.7
     configmap_mounts:
       - configmap_name: config
         items:
@@ -520,7 +520,7 @@ name: msap-subscriber
 replicas: 1
 containers:
   - name: msap
-    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.2
+    image: ghcr.io/stealthim/stealthimmsap/stealthimmsap-app:v0.0.7
     configmap_mounts:
       - configmap_name: config
         items:
@@ -561,7 +561,7 @@ name: proxy
 replicas: 1
 containers:
   - name: proxy
-    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:v0.0.6
+    image: ghcr.io/stealthim/stealthimproxy/stealthimproxy-app:v0.0.10
     ports:
       - name: http
         container_port: 80
