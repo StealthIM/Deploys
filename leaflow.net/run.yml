@@ -341,7 +341,7 @@ replicas: 1
 service_name: filestorage-headless
 containers:
   - name: filestorage
-    image: ghcr.io/stealthim/stealthimfilestorage/stealthimfilestorage-app:v0.0.2
+    image: ghcr.io/stealthim/stealthimfilestorage/stealthimfilestorage-app:v0.0.1
     ports:
       - name: http
         container_port: 50052
